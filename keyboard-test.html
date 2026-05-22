@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Keyboard Test</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 32px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 500;
+      color: #333;
+      letter-spacing: 0.05em;
+    }
+
+    /* 입력 표시 영역 */
+    #display {
+      width: 720px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 16px 20px;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    #display .label {
+      font-size: 12px;
+      color: #aaa;
+      white-space: nowrap;
+    }
+
+    #key-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #222;
+      flex: 1;
+    }
+
+    #key-code {
+      font-size: 12px;
+      color: #aaa;
+      font-family: monospace;
+    }
+
+    /* 키보드 영역 */
+    #keyboard {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 16px;
+      padding: 20px 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      user-select: none;
+    }
+
+    .row {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+    }
+
+    .key {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 44px;
+      min-width: 44px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: 1.5px solid #e0e0e0;
+      background: #fafafa;
+      color: #333;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.08s, border-color 0.08s, transform 0.08s, box-shadow 0.08s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      position: relative;
+    }
+
+    .key:hover {
+      background: #f0f0f0;
+      border-color: #ccc;
+    }
+
+    .key.active {
+      background: #222;
+      color: #fff;
+      border-color: #222;
+      transform: translateY(1px);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    }
+
+    .key.flash {
+      animation: flash 0.18s ease-out;
+    }
+
+    @keyframes flash {
+      0%   { background: #222; color: #fff; border-color: #222; }
+      100% { background: #fafafa; color: #333; border-color: #e0e0e0; }
+    }
+
+    /* 특수 키 너비 */
+    .key[data-key="Backspace"]   { min-width: 80px; }
+    .key[data-key="Tab"]         { min-width: 66px; }
+    .key[data-key="CapsLock"]    { min-width: 76px; }
+    .key[data-key="Enter"]       { min-width: 92px; }
+    .key[data-key="ShiftLeft"]   { min-width: 100px; }
+    .key[data-key="ShiftRight"]  { min-width: 100px; }
+    .key[data-key="ControlLeft"],
+    .key[data-key="ControlRight"]{ min-width: 62px; }
+    .key[data-key="AltLeft"],
+    .key[data-key="AltRight"]    { min-width: 62px; }
+    .key[data-key="Space"]       { min-width: 280px; }
+    .key[data-key="MetaLeft"],
+    .key[data-key="MetaRight"]   { min-width: 62px; }
+
+    .key .sub {
+      font-size: 9px;
+      position: absolute;
+      top: 5px;
+      left: 7px;
+      color: #aaa;
+      line-height: 1;
+    }
+
+    .key.active .sub { color: #ddd; }
+
+    /* 테스트 리셋 버튼 */
+    #reset-btn {
+      background: none;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      padding: 8px 20px;
+      font-size: 13px;
+      color: #888;
+      cursor: pointer;
+      transition: border-color 0.1s, color 0.1s;
+    }
+    #reset-btn:hover { border-color: #aaa; color: #444; }
+
+    /* 테스트 완료 메시지 */
+    #progress {
+      font-size: 13px;
+      color: #aaa;
+    }
+
+    #progress span {
+      font-weight: 600;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Keyboard Test</h1>
+
+  <div id="display">
+    <span class="label">Last key</span>
+    <span id="key-name">—</span>
+    <span id="key-code"></span>
+  </div>
+
+  <div id="keyboard">
+    <!-- Row 1: Function keys -->
+    <div class="row">
+      <div class="key" data-key="Escape">Esc</div>
+      <div style="width:24px"></div>
+      <div class="key" data-key="F1">F1</div>
+      <div class="key" data-key="F2">F2</div>
+      <div class="key" data-key="F3">F3</div>
+      <div class="key" data-key="F4">F4</div>
+      <div style="width:12px"></div>
+      <div class="key" data-key="F5">F5</div>
+      <div class="key" data-key="F6">F6</div>
+      <div class="key" data-key="F7">F7</div>
+      <div class="key" data-key="F8">F8</div>
+      <div style="width:12px"></div>
+      <div class="key" data-key="F9">F9</div>
+      <div class="key" data-key="F10">F10</div>
+      <div class="key" data-key="F11">F11</div>
+      <div class="key" data-key="F12">F12</div>
+    </div>
+
+    <!-- Row 2: Numbers -->
+    <div class="row">
+      <div class="key" data-key="Backquote"><span class="sub">~</span>`</div>
+      <div class="key" data-key="Digit1"><span class="sub">!</span>1</div>
+      <div class="key" data-key="Digit2"><span class="sub">@</span>2</div>
+      <div class="key" data-key="Digit3"><span class="sub">#</span>3</div>
+      <div class="key" data-key="Digit4"><span class="sub">$</span>4</div>
+      <div class="key" data-key="Digit5"><span class="sub">%</span>5</div>
+      <div class="key" data-key="Digit6"><span class="sub">^</span>6</div>
+      <div class="key" data-key="Digit7"><span class="sub">&amp;</span>7</div>
+      <div class="key" data-key="Digit8"><span class="sub">*</span>8</div>
+      <div class="key" data-key="Digit9"><span class="sub">(</span>9</div>
+      <div class="key" data-key="Digit0"><span class="sub">)</span>0</div>
+      <div class="key" data-key="Minus"><span class="sub">_</span>-</div>
+      <div class="key" data-key="Equal"><span class="sub">+</span>=</div>
+      <div class="key" data-key="Backspace">⌫ Backspace</div>
+    </div>
+
+    <!-- Row 3: QWERTY -->
+    <div class="row">
+      <div class="key" data-key="Tab">Tab</div>
+      <div class="key" data-key="KeyQ">Q</div>
+      <div class="key" data-key="KeyW">W</div>
+      <div class="key" data-key="KeyE">E</div>
+      <div class="key" data-key="KeyR">R</div>
+      <div class="key" data-key="KeyT">T</div>
+      <div class="key" data-key="KeyY">Y</div>
+      <div class="key" data-key="KeyU">U</div>
+      <div class="key" data-key="KeyI">I</div>
+      <div class="key" data-key="KeyO">O</div>
+      <div class="key" data-key="KeyP">P</div>
+      <div class="key" data-key="BracketLeft"><span class="sub">{</span>[</div>
+      <div class="key" data-key="BracketRight"><span class="sub">}</span>]</div>
+      <div class="key" data-key="Backslash"><span class="sub">|</span>\</div>
+    </div>
+
+    <!-- Row 4: ASDF -->
+    <div class="row">
+      <div class="key" data-key="CapsLock">CapsLock</div>
+      <div class="key" data-key="KeyA">A</div>
+      <div class="key" data-key="KeyS">S</div>
+      <div class="key" data-key="KeyD">D</div>
+      <div class="key" data-key="KeyF">F</div>
+      <div class="key" data-key="KeyG">G</div>
+      <div class="key" data-key="KeyH">H</div>
+      <div class="key" data-key="KeyJ">J</div>
+      <div class="key" data-key="KeyK">K</div>
+      <div class="key" data-key="KeyL">L</div>
+      <div class="key" data-key="Semicolon"><span class="sub">:</span>;</div>
+      <div class="key" data-key="Quote"><span class="sub">"</span>'</div>
+      <div class="key" data-key="Enter">Enter ↵</div>
+    </div>
+
+    <!-- Row 5: ZXCV -->
+    <div class="row">
+      <div class="key" data-key="ShiftLeft">⇧ Shift</div>
+      <div class="key" data-key="KeyZ">Z</div>
+      <div class="key" data-key="KeyX">X</div>
+      <div class="key" data-key="KeyC">C</div>
+      <div class="key" data-key="KeyV">V</div>
+      <div class="key" data-key="KeyB">B</div>
+      <div class="key" data-key="KeyN">N</div>
+      <div class="key" data-key="KeyM">M</div>
+      <div class="key" data-key="Comma"><span class="sub">&lt;</span>,</div>
+      <div class="key" data-key="Period"><span class="sub">&gt;</span>.</div>
+      <div class="key" data-key="Slash"><span class="sub">?</span>/</div>
+      <div class="key" data-key="ShiftRight">Shift ⇧</div>
+    </div>
+
+    <!-- Row 6: Bottom -->
+    <div class="row">
+      <div class="key" data-key="ControlLeft">Ctrl</div>
+      <div class="key" data-key="MetaLeft">⊞ Win</div>
+      <div class="key" data-key="AltLeft">Alt</div>
+      <div class="key" data-key="Space"></div>
+      <div class="key" data-key="AltRight">Alt</div>
+      <div class="key" data-key="MetaRight">Win ⊞</div>
+      <div class="key" data-key="ContextMenu">☰</div>
+      <div class="key" data-key="ControlRight">Ctrl</div>
+    </div>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:20px;">
+    <div id="progress">테스트된 키: <span id="tested-count">0</span> / <span id="total-count">0</span></div>
+    <button id="reset-btn">초기화</button>
+  </div>
+
+<script>
+  const keys = document.querySelectorAll('.key');
+  const keyMap = {};
+  keys.forEach(k => {
+    keyMap[k.dataset.key] = k;
+  });
+
+  const totalCount = keys.length;
+  document.getElementById('total-count').textContent = totalCount;
+
+  const testedKeys = new Set();
+
+  function activateKey(code, label) {
+    const el = keyMap[code];
+    if (!el) return;
+
+    // 표시 업데이트
+    document.getElementById('key-name').textContent = label || el.textContent.trim() || code;
+    document.getElementById('key-code').textContent = code;
+
+    // 시각 효과
+    el.classList.remove('flash');
+    el.classList.add('active');
+
+    // 테스트 카운트
+    if (!testedKeys.has(code)) {
+      testedKeys.add(code);
+      document.getElementById('tested-count').textContent = testedKeys.size;
+    }
+  }
+
+  function deactivateKey(code) {
+    const el = keyMap[code];
+    if (!el) return;
+    el.classList.remove('active');
+    el.classList.add('flash');
+    el.addEventListener('animationend', () => el.classList.remove('flash'), { once: true });
+  }
+
+  // 물리 키보드 이벤트
+  document.addEventListener('keydown', e => {
+    e.preventDefault();
+    activateKey(e.code, e.key === ' ' ? 'Space' : e.key);
+  });
+
+  document.addEventListener('keyup', e => {
+    deactivateKey(e.code);
+  });
+
+  // 마우스 클릭 이벤트
+  keys.forEach(key => {
+    key.addEventListener('mousedown', () => {
+      activateKey(key.dataset.key, key.textContent.trim());
+    });
+    key.addEventListener('mouseup', () => {
+      deactivateKey(key.dataset.key);
+    });
+    key.addEventListener('mouseleave', () => {
+      if (key.classList.contains('active')) deactivateKey(key.dataset.key);
+    });
+  });
+
+  // 초기화
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    testedKeys.clear();
+    document.getElementById('tested-count').textContent = 0;
+    document.getElementById('key-name').textContent = '—';
+    document.getElementById('key-code').textContent = '';
+    keys.forEach(k => k.classList.remove('active', 'flash'));
+  });
+</script>
+</body>
+</html>
